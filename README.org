@@ -1,0 +1,7 @@
+#+title: RestClient.jl
+#+author: tecosaur
+
+#+html: <a href="https://tecosaur.github.io/RestClient.jl/stable/"><img src="https://img.shields.io/badge/docs-stable-blue.svg"></a>
+#+html: <a href="https://tecosaur.github.io/RestClient.jl/dev/"><img src="https://img.shields.io/badge/docs-dev-blue.svg"></a>
+
+Accessing RESTful APIs with as little boilerplate as possible.

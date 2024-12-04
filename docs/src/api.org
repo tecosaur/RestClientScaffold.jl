@@ -1,0 +1,60 @@
+#+title: API
+
+* Macros
+
+#+begin_src @docs
+@endpoint
+@jsondef
+#+end_src
+
+* Request types
+
+#+begin_src @docs
+Request
+RequestConfig
+AbstractEndpoint
+SingleEndpoint
+ListEndpoint
+#+end_src
+
+* Response types
+
+#+begin_src @docs
+SingleResponse
+Single
+ListResponse
+List
+#+end_src
+
+* Request interface
+
+#+begin_src @docs
+RestClient.pagename
+RestClient.headers
+RestClient.parameters
+RestClient.payload
+#+end_src
+
+* Response interface
+
+#+begin_src @docs
+RestClient.validate
+RestClient.responsetype
+RestClient.postprocess
+RestClient.contents
+RestClient.metadata
+RestClient.nextpage
+RestClient.thispagenumber
+RestClient.remainingpages
+#+end_src
+
+* Content formatting
+
+#+begin_src @docs
+RestClient.AbstractFormat
+RestClient.RawFormat
+RestClient.JSONFormat
+RestClient.dataformat
+RestClient.interpretresponse
+RestClient.writepayload
+#+end_src

@@ -1,0 +1,7 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+Org = "587fedb0-ad84-11e9-2bd6-d15ea4be1f9e"
+RestClient = "e1389577-bcae-4d0f-b368-61b404b8c94c"
+
+[sources]
+RestClient = {path = ".."}

@@ -1,0 +1,8 @@
+#+title: RestClient
+
+Interacting with a RESTful API is fairly simple, but there's often a fair bit of
+boilerplate involved in making well-formed requests, handling serialisation and
+deserialisation, request limiting, and result pagination.
+
+=RestClient= aims to take care of as much of this boilerplate as possible.
+See the tutorial for a sense of what this looks like in practice.
