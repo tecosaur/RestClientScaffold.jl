@@ -1,0 +1,246 @@
+#+title: Tutorial
+#+property: header-args:julia :tangle DeckAPI.jl :comments no
+
+* Basic setup
+
+To demonstrate how this can simplify API wrapping, in this tutorial we'll
+implement a client for the [[https://deckofcardsapi.com/][Deck of Cards API]]. For demonstration purposes, we'll
+just wrap part of the API.
+
+Looking at the API documentation, we can see that
++ The base URL is =https://deckofcardsapi.com/api/=
++ Decks can be created at the =deck/new= API (optionally shuffled)
++ Operations on a deck occur at =deck/<id>/operation= endpoints
+
+That's it! To get started we'll create an blank package and call it "DeckAPI" (I
+did this in my temp directory).
+
+#+begin_example
+pkg> generate DeckAPI
+  Generating  project DeckAPI:
+    DeckAPI/Project.toml
+    DeckAPI/src/DeckAPI.jl
+#+end_example
+
+Then, we activate the project and add =JSON3= and =RestClientScaffold= as
+dependencies.
+
+#+begin_example
+pkg> activate DeckAPI
+
+(DeckAPI) pkg> add RestClientScaffold JSON3
+    Updating `/tmp/DeckAPI/Project.toml`
+  [d1389577] + RestClientScaffold v0.1.0
+  [0f8b85d8] + JSON3 v1.14.1
+    Updating `/tmp/DeckAPI/Manifest.toml`
+  [...] ...
+#+end_example
+
+Then we can navigate to =DeckAPI/src/DeckAPI.jl=, get rid of the default
+~greet() = print("Hello World!")~, and add
+
+#+begin_src julia
+using RestClientScaffold, JSON3
+#+end_src
+
+Now we're ready to get started implementing the API! To start with, we'll want
+to create a ~RequestConfig~ to hold the context in which we're calling the API.
+This just holds the base URL, a request lock, API access key (optional), and
+timeout value (optional). The /Deck of Cards/ API is simple enough that we can set
+a single global ~RequestConfig~, but in a more complex case we might define a
+utility function to create a ~RequestConfig~ based on user-provided parameters.
+
+#+begin_src julia
+const DECK_CONFIG = RequestConfig("https://deckofcardsapi.com/api")
+#+end_src
+
+That's all the setup needed, next we'll define types for the JSON structures
+that /Desk of Cards/ can return.
+
+* Defining API types
+
+Reading the documentation in order, we come across a few types we'll want to
+implement. First, there's the new deck object
+
+#+begin_src json
+{
+    "success": true,
+    "deck_id": "3p40paa87x90",
+    "shuffled": true,
+    "remaining": 52
+}
+#+end_src
+
+Thanks to the [[@ref][~@jsondef~]] macro, this is merely a matter of
+
+#+begin_src julia
+@jsondef struct Deck
+    # success::Bool # I don't think we care about this?
+    id."deck_id"::String
+    # shuffled::Bool # We should know this anyway?
+    remaining::Int
+end
+#+end_src
+
+We can also draw cards, which look like this
+
+#+begin_src julia
+@jsondef struct Card
+    code::String
+    # image # Not needed by us (at the moment)
+    value::String
+    suit::String
+end
+#+end_src
+
+Cards are given as a list in a certain response form, which gives us an
+opportunity to define a [[@ref][~ListResponse~]] subtype.
+
+#+begin_src julia
+@jsondef struct CardsResponse <: ListResponse{Card}
+    deck."deck_id"::String
+    remaining::Int
+    cards::Vector{Card}
+end
+#+end_src
+
+Since we've subtyped ~ListResponse~, this will automagically be turned into a [[@ref][~List~]]
+holding ~cards~.
+
+* Adding endpoints
+
+In =RestClientScaffold=, each endpoint is represented with a dedicated subtype of
+[[@ref][~AbstractEndpoint~]]. Endpoints that provide a single value should subtype
+[[@ref][~SingleEndpoint~]], while endpoints that provide multiple values should subtype [[@ref][~ListEndpoint~]].
+
+While we could define the structs and the interface methods separately, we can
+conveniently combine these steps with the [[@ref][~@endpoint~]] macro.
+
+Let's start off with deck creation.
+
+#+begin_src julia
+@endpoint struct NewDeckEndpoint <: SingleEndpoint
+    "deck/new{ifelse(self.shuffle, \"/shuffle\", \"\")}?deck_count={count}" -> Deck
+    count::Int
+    shuffle::Bool
+end
+#+end_src
+
+We can also shuffle decks.
+
+#+begin_src julia
+@endpoint struct ShuffleEndpoint <: SingleEndpoint
+    "deck/{deck}/shuffle?{remaining}" -> Deck
+    deck::String
+    remaining::Bool
+end
+#+end_src
+
+Now let's draw some cards.
+
+#+begin_src julia
+@endpoint struct DrawEndpoint <: ListEndpoint
+    "deck/{deck}/draw?{count}" -> CardsResponse
+    deck::String
+    count::Int
+end
+#+end_src
+
+Cards can also be returned to the deck.
+
+#+begin_src julia
+@endpoint struct CardReturnEndpoint <: SingleEndpoint
+    "deck/{deck}/return" -> Deck
+    deck::String
+    cards::Union{Nothing, Vector{Card}}
+end
+
+function RestClientScaffold.parameters(ret::CardReturnEndpoint)
+    if isnothing(ret.cards)
+        Pair{String, String}[]
+    else
+        ["cards" => join(map(c -> c.code, ret.cards), ",")]
+    end
+end
+#+end_src
+
+* Defining our API
+
+Now we've gone to the effort of defining all our types and endpoints, we just
+need to create the API for our package.
+
+#+begin_src julia
+new(count::Int = 1; shuffled::Bool=false) =
+    api_get(Request(DECK_CONFIG, NewDeckEndpoint(count, shuffled)))
+#+end_src
+
+#+begin_src julia
+shuffle(deck::Deck, remaining::Bool=false) =
+    api_get(Request(DECK_CONFIG, ShuffleEndpoint(deck.id, remaining)))
+#+end_src
+
+#+begin_src julia
+draw(deck::Deck, count::Int=1) =
+    api_get(Request(DECK_CONFIG, DrawEndpoint(deck.id, count)))
+#+end_src
+
+#+begin_src julia
+putback(deck::Deck, cards::Union{Nothing, Vector{Card}} = nothing) =
+    api_get(Request(DECK_CONFIG, CardReturnEndpoint(deck.id, cards)))
+
+putback(cardlist::List{Cards}) = putback(cardlist.request.endpoint.deck, cardlist.items)
+#+end_src
+
+* Demonstration
+
+By starting Julia with the environment variable =JULIA_DEBUG=RestClientScaffold=
+set, we will see information on the requests sent and responses received. This
+helps us verify that everything is behaving as expected, and debug any
+failures or unexpected results.
+
+#+begin_src julia-repl
+julia> deck = DeckAPI.new()
+┌ Debug:  GET  https://deckofcardsapi.com/api/deck/new?deck_count=1
+└ @ RestClientScaffold
+┌ Debug:  200  80 bytes (saved to /tmp/api-get.dump) from https://deckofcardsapi.com/api/deck/new?deck_count=1
+└ @ RestClientScaffold
+DeckAPI.Deck(id="01n3ezer3rly", remaining=52)
+
+julia> cards = DeckAPI.draw(deck, 5)
+┌ Debug:  GET  https://deckofcardsapi.com/api/deck/01n3ezer3rly/draw?count=5
+└ @ RestClientScaffold
+┌ Debug:  200  1.181 KiB (saved to /tmp/api-get.dump) from https://deckofcardsapi.com/api/deck/01n3ezer3rly/draw?count=5
+└ @ RestClientScaffold
+RestClientScaffold.List{DeckAPI.Card} holding 5 items:
+  • Card(code="AS", value="ACE", suit="SPADES")
+  • Card(code="2S", value="2", suit="SPADES")
+  • Card(code="3S", value="3", suit="SPADES")
+  • Card(code="4S", value="4", suit="SPADES")
+  • Card(code="5S", value="5", suit="SPADES")
+
+julia> DeckAPI.putback(cards)
+┌ Debug:  GET  https://deckofcardsapi.com/api/deck/01n3ezer3rly/return?cards=AS%2C2S%2C3S%2C4S%2C5S
+└ @ RestClientScaffold
+┌ Debug:  200  61 bytes (saved to /tmp/api-get.dump) from https://deckofcardsapi.com/api/deck/01n3ezer3rly/return?cards=AS%2C2S%2C3S%2C4S%2C5S
+└ @ RestClientScaffold
+DeckAPI.Deck(id="01n3ezer3rly", remaining=52)
+
+julia> DeckAPI.shuffle(deck)
+┌ Debug:  GET  https://deckofcardsapi.com/api/deck/01n3ezer3rly/shuffle?remaining=false
+└ @ RestClientScaffold
+┌ Debug:  200  79 bytes (saved to /tmp/api-get.dump) from https://deckofcardsapi.com/api/deck/01n3ezer3rly/shuffle?remaining=false
+└ @ RestClientScaffold
+DeckAPI.Deck(id="01n3ezer3rly", remaining=52)
+
+julia> cards = DeckAPI.draw(deck, 5)
+┌ Debug:  GET  https://deckofcardsapi.com/api/deck/01n3ezer3rly/draw?count=5
+└ @ RestClientScaffold
+┌ Debug:  200  1.183 KiB (saved to /tmp/api-get.dump) from https://deckofcardsapi.com/api/deck/01n3ezer3rly/draw?count=5
+└ @ RestClientScaffold
+RestClientScaffold.List{DeckAPI.Card} holding 5 items:
+  • Card(code="3C", value="3", suit="CLUBS")
+  • Card(code="QC", value="QUEEN", suit="CLUBS")
+  • Card(code="4S", value="4", suit="SPADES")
+  • Card(code="2D", value="2", suit="DIAMONDS")
+  • Card(code="3S", value="3", suit="SPADES")
+#+end_src

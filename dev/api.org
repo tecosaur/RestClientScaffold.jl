@@ -1,0 +1,59 @@
+#+title: API
+
+* Macros
+
+#+begin_src @docs
+@endpoint
+@jsondef
+#+end_src
+
+* Request types
+
+#+begin_src @docs
+Request
+RequestConfig
+AbstractEndpoint
+SingleEndpoint
+ListEndpoint
+#+end_src
+
+* Response types
+
+#+begin_src @docs
+SingleResponse
+Single
+ListResponse
+List
+#+end_src
+
+* Response format types
+
+#+begin_src @docs
+RestClientScaffold.AbstractFormat
+RestClientScaffold.RawFormat
+RestClientScaffold.JSONFormat
+#+end_src
+
+* Request interface
+
+#+begin_src @docs
+RestClientScaffold.pagename
+RestClientScaffold.headers
+RestClientScaffold.parameters
+RestClientScaffold.payload
+#+end_src
+
+* Response interface
+
+#+begin_src @docs
+RestClientScaffold.responsetype
+RestClientScaffold.responseformat
+RestClientScaffold.interpretresponse
+RestClientScaffold.validate
+RestClientScaffold.postprocess
+RestClientScaffold.contents
+RestClientScaffold.metadata
+RestClientScaffold.nextpage
+RestClientScaffold.thispagenumber
+RestClientScaffold.remainingpages
+#+end_src
