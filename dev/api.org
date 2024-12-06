@@ -26,14 +26,6 @@ ListResponse
 List
 #+end_src
 
-* Response format types
-
-#+begin_src @docs
-RestClientScaffold.AbstractFormat
-RestClientScaffold.RawFormat
-RestClientScaffold.JSONFormat
-#+end_src
-
 * Request interface
 
 #+begin_src @docs
@@ -46,14 +38,23 @@ RestClientScaffold.payload
 * Response interface
 
 #+begin_src @docs
-RestClientScaffold.responsetype
-RestClientScaffold.responseformat
-RestClientScaffold.interpretresponse
 RestClientScaffold.validate
+RestClientScaffold.responsetype
 RestClientScaffold.postprocess
 RestClientScaffold.contents
 RestClientScaffold.metadata
 RestClientScaffold.nextpage
 RestClientScaffold.thispagenumber
 RestClientScaffold.remainingpages
+#+end_src
+
+* Content formatting
+
+#+begin_src @docs
+RestClientScaffold.AbstractFormat
+RestClientScaffold.RawFormat
+RestClientScaffold.JSONFormat
+RestClientScaffold.dataformat
+RestClientScaffold.interpretresponse
+RestClientScaffold.writepayload
 #+end_src
