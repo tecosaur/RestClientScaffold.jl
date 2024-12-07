@@ -1,3 +1,17 @@
+# The core API
+
+"""
+    perform(req::Request{kind}) -> Any
+
+Validate and perform the request `req`, and return the result.
+
+The specific behaviour is determined by the `kind` of the request, which
+corresponds to an HTTP method name (`:get`, `:post`, etc.).
+"""
+function perform end
+
+# Generic request functionality
+
 """
     ANSI_CLEAR_LINE
 
@@ -35,6 +49,8 @@ function encode_uri_component(io::IO, s::AbstractString)
         end
     end
 end
+
+encode_uri_component(s::AbstractString) = sprint(encode_uri_component, s)
 
 """
     url_parameters(params::Vector{Pair{String, String}})
@@ -126,31 +142,32 @@ function catch_ratelimit(f::F, reqlock::ReentrantLock, args...; kwargs...) where
     end
 end
 
-function api_get_directly(url::String;
-                          headers::Union{<:AbstractVector, <:AbstractDict} = Pair{String, String}[],
-                          timeout::Float64 = Inf)
-    buf = IOBuffer()
-    @debug debug_request(url, headers) _file=nothing
-    res = Downloads.request(url; method="GET", output=buf, headers, timeout)
-    @debug debug_response(res, buf) _file=nothing
-    res isa Downloads.RequestError && throw(req)
-    res, buf
-end
+# Utility functions
 
-function debug_request(url::String, headers)
+function debug_request(method::String, url::String, headers, body::Union{IO, Nothing} = nothing)
+    bodyinfo = if isnothing(body)
+        S""
+    else
+        dumpfile = joinpath(tempdir(), "rest-body.dump")
+        @static if isdefined(Base.Filesystem, :temp_cleanup_later)
+            isfile(dumpfile) || Base.Filesystem.temp_cleanup_later(dumpfile)
+        end
+        write(dumpfile, seekstart(body))
+        S"$(Base.format_bytes(position(body))) (saved to {bright_magenta:$dumpfile}) sent to "
+    end
     strheaders = if isempty(headers)
         S""
     else
         join((S"\n       {emphasis:$k:} $v" for (k, v) in headers), "")
     end
-    S"{inverse,bold,magenta: GET } {light,underline:$url}$strheaders"
+    S"{inverse,bold,magenta: $method } $bodyinfo{light,underline:$url}$strheaders"
 end
 
-function debug_response(res, buf::IOBuffer)
+function debug_response(url::String, res, buf::IOBuffer)
     face, status, msg = if res isa Downloads.RequestError
         :error, res.response.status, res.response.message
     else
-        dumpfile = joinpath(tempdir(), "api-get.dump")
+        dumpfile = joinpath(tempdir(), "rest-response.dump")
         @static if isdefined(Base.Filesystem, :temp_cleanup_later)
             isfile(dumpfile) || Base.Filesystem.temp_cleanup_later(dumpfile)
         end
@@ -161,7 +178,38 @@ function debug_response(res, buf::IOBuffer)
     S"{inverse,bold,$face: $status } $msg {light,underline:$url}"
 end
 
-function api_post_directly(url::String, payload::Union{<:IO, <:AbstractString, Nothing} = nothing;
+function handle_response(req::Request, res::Downloads.Response, buf::IO)
+    dtype = responsetype(req.endpoint)
+    fmt = dataformat(req.endpoint, dtype)
+    seekstart(buf)
+    data = interpretresponse(buf, fmt, dtype)
+    postprocess(res, req, data)
+end
+
+# HTTP method implementations
+
+# GET
+
+function http_get_directly(url::String;
+                          headers::Union{<:AbstractVector, <:AbstractDict} = Pair{String, String}[],
+                          timeout::Float64 = Inf)
+    buf = IOBuffer()
+    @debug debug_request("GET", url, headers) _file=nothing
+    res = Downloads.request(url; method="GET", output=buf, headers, timeout)
+    @debug debug_response(url, res, buf) _file=nothing
+    res isa Downloads.RequestError && throw(req)
+    res, buf
+end
+
+function perform(req::Request{:get})
+    validate(req) || throw(ArgumentError("Request is not well-formed"))
+    res, buf = catch_ratelimit(http_get_directly, req.config.reqlock, url(req); headers=headers(req), timeout=req.config.timeout)
+    handle_response(req, res, buf)
+end
+
+# POST
+
+function http_post_directly(url::String, payload::Union{<:IO, <:AbstractString, Nothing} = nothing;
                            headers::Union{<:AbstractVector, <:AbstractDict} = Pair{String, String}[],
                            timeout::Float64 = Inf)
     buf = IOBuffer()
@@ -170,9 +218,9 @@ function api_post_directly(url::String, payload::Union{<:IO, <:AbstractString, N
     elseif payload isa AbstractString
         IOBuffer(payload)
     end
-    @debug debug_request(url, headers) _file=nothing
+    @debug debug_request("POST", url, headers, payload) _file=nothing
     res = Downloads.request(url; method="POST", output=buf, input, headers, timeout)
-    @debug debug_response(res, buf) _file=nothing
+    @debug debug_response(url, res, buf) _file=nothing
     res isa Downloads.RequestError && throw(req)
     res, buf
 end
@@ -186,30 +234,10 @@ function format_payload(endpoint::AbstractEndpoint, payload)
     seekstart(buf)
 end
 
-function api_handle_response(req::Request, res::Downloads.Response, buf::IO)
-    dtype = responsetype(req.endpoint)
-    fmt = dataformat(req.endpoint, dtype)
-    seekstart(buf)
-    data = interpretresponse(buf, fmt, dtype)
-    postprocess(res, req, data)
-end
-
-api_get(config::RequestConfig, args...; kwargs...) =
-    catch_ratelimit(api_get_directly, config.reqlock, args...; kwargs...)
-
-function api_get(req::Request)
-    validate(req) || throw(ArgumentError("Request is not well-formed"))
-    res, buf = api_get(req.config, url(req); headers=headers(req), timeout=req.config.timeout)
-    api_handle_response(req, res, buf)
-end
-
-api_post(config::RequestConfig, args...; kwargs...) =
-    catch_ratelimit(api_post_directly, config.reqlock, args...; kwargs...)
-
-function api_post(req::Request)
+function perform(req::Request{:post})
     validate(req) || throw(ArgumentError("Request is not well-formed"))
     payload_io = format_payload(req.endpoint, payload(req))
-    res, buf = api_post(req.config, url(req), payload_io;
-                        headers=headers(req), timeout=req.config.timeout)
-    api_handle_response(req, res, buf)
+    res, buf = catch_ratelimit(http_post_directly, req.config.reqlock, url(req), payload_io;
+                               headers=headers(req), timeout=req.config.timeout)
+    handle_response(req, res, buf)
 end

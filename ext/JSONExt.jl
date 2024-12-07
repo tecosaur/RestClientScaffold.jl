@@ -4,6 +4,14 @@ using RestClient
 import RestClient: @jsondef
 using JSON3, StructTypes
 
+function RestClient.interpretresponse(data::IO, ::RestClient.JSONFormat, ::Type{T}) where {T}
+    JSON3.read(data, T)
+end
+
+function RestClient.writepayload(dest::IO, ::RestClient.JSONFormat, data)
+    JSON3.write(dest, data)
+end
+
 macro jsondef(opt::QuoteNode, kindname::Symbol, struc::Expr)
     option = opt.value
     Meta.isexpr(struc, :struct, 3) ||
@@ -127,7 +135,7 @@ macro jsondef(opt::QuoteNode, kindname::Symbol, struc::Expr)
         push!(body, :(StructTypes.names(::Type{$structref}) = $(Expr(:tuple, namemap...))))
     end
     # Declare that this struct is JSON formatted
-    push!(body, :($RestClient.responseformat(::Type{$structref}) = JSONFormat()))
+    push!(body, :($RestClient.dataformat(::Type{$structref}) = JSONFormat()))
     # Return the generated code
     Expr(:block, body...)
 end
@@ -145,10 +153,6 @@ end
 macro jsondef(opt::QuoteNode, struc::Expr)
     Expr(:macrocall, GlobalRef(RestClient, Symbol("@jsondef")),
          __source__, opt, :Struct, struc) |> esc
-end
-
-function RestClient.interpretresponse(data::IO, ::RestClient.JSONFormat, ::Type{T}) where {T}
-    JSON3.read(data, T)
 end
 
 end

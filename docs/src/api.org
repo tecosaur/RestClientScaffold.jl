@@ -3,6 +3,7 @@
 * Macros
 
 #+begin_src @docs
+@globalconfig
 @endpoint
 @jsondef
 #+end_src
@@ -29,6 +30,8 @@ List
 * Request interface
 
 #+begin_src @docs
+RestClient.globalconfig
+RestClient.perform
 RestClient.pagename
 RestClient.headers
 RestClient.parameters
