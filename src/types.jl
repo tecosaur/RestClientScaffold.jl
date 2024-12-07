@@ -82,11 +82,12 @@ RequestConfig(baseurl::String; key::Union{Nothing, String}=nothing, timeout::Rea
     RequestConfig(baseurl, ReentrantLock(), key, Float64(timeout))
 
 """
-    Request{E<:AbstractEndpoint}
+    Request{kind, E<:AbstractEndpoint}
 
 A request to an API endpoint, with a specific configuration.
 
-This is the complete set of information required to make a request to an API.
+This is the complete set of information required to make a `kind` HTTP request
+to an endpoint `E`.
 
 See also: [`AbstractEndpoint`](@ref), [`RequestConfig`](@ref).
 
@@ -111,10 +112,13 @@ Request╶─┤     ╰╶╶╶╶╶╶╶╶│                      │    
  * Only for POST requests   ╶╶ Optional first argument
 ```
 """
-struct Request{E<:AbstractEndpoint}
+struct Request{kind,E<:AbstractEndpoint}
     config::RequestConfig
     endpoint::E
 end
+
+Request{kind}(config::RequestConfig, endpoint::E) where {kind, E <: AbstractEndpoint} =
+    Request{kind, E}(config, endpoint)
 
 """
     Single{T, E<:SingleEndpoint}
@@ -125,7 +129,7 @@ along with request information and metadata.
 See also: [`SingleEndpoint`](@ref), [`SingleResponse`](@ref).
 """
 struct Single{T, E<:SingleEndpoint}
-    request::Request{E}
+    request::Request{<:Any, E}
     data::T
     meta::Dict{Symbol, Any}
 end
@@ -139,7 +143,7 @@ along with request information and metadata.
 See also: [`ListEndpoint`](@ref), [`ListResponse`](@ref).
 """
 struct List{T, E<:ListEndpoint}
-    request::Request{E}
+    request::Request{<:Any, E}
     items::Vector{T}
     meta::Dict{Symbol, Any}
 end

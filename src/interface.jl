@@ -1,6 +1,20 @@
 # Endpoint API
 
 """
+    globalconfig(::Val{::Module}) -> RequestConfig
+
+Return the global configuration for the given module.
+
+This is used in [`@endpoint`](@ref) generated API functions.
+
+!!! warning
+    Be careful not to accidentally define this function in a way that generates
+    a new `RequestConfig` every time it is called, as this will cause state information
+    (like rate limits) to be lost between requests.
+"""
+function globalconfig end
+
+"""
     pagename([config::RequestConfig], endpoint::AbstractEndpoint) -> String
 
 Return the name of the page for the given `endpoint`.
@@ -93,6 +107,8 @@ end
 
 dataformat(::AbstractEndpoint, T::Type) = dataformat(T)
 
+dataformat(::Type{Vector{T}}) where T = dataformat(T)
+
 """
     interpretresponse(data::IO, fmt::AbstractFormat, ::Type{T}) -> value::T
 
@@ -158,11 +174,11 @@ end
 postprocess(::Downloads.Response, req::Request, data) =
     postprocess(req, data)
 
-function postprocess(req::Request{E}, data::ListResponse{T}) where {E<:ListEndpoint, T}
+function postprocess(req::Request{kind, E}, data::ListResponse{T}) where {kind, E<:ListEndpoint, T}
     List{T, E}(req, contents(data), metadata(data))
 end
 
-function postprocess(req::Request{E}, data::SingleResponse{T}) where {E<:SingleEndpoint, T}
+function postprocess(req::Request{kind, E}, data::SingleResponse{T}) where {kind, E<:SingleEndpoint, T}
     Single{T, E}(req, contents(data), metadata(data))
 end
 
