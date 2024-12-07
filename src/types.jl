@@ -111,7 +111,7 @@ Request╶─┤     ╰╶╶╶╶╶╶╶╶│                      │    
  * Only for POST requests   ╶╶ Optional first argument
 ```
 """
-struct Request{E<:AbstractEndpoint}
+struct Request{kind,E<:AbstractEndpoint}
     config::RequestConfig
     endpoint::E
 end

@@ -1,6 +1,20 @@
 # Endpoint API
 
 """
+    globalconfig(::Val{::Module}) -> RequestConfig
+
+Return the global configuration for the given module.
+
+This is used in [`@endpoint`](@ref) generated API functions.
+
+!!! warning
+    Be careful not to accidentally define this function in a way that generates
+    a new `RequestConfig` every time it is called, as this will cause state information
+    (like rate limits) to be lost between requests.
+"""
+function globalconfig end
+
+"""
     pagename([config::RequestConfig], endpoint::AbstractEndpoint) -> String
 
 Return the name of the page for the given `endpoint`.
