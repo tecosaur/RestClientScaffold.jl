@@ -127,7 +127,7 @@ macro jsondef(opt::QuoteNode, kindname::Symbol, struc::Expr)
         push!(body, :(StructTypes.names(::Type{$structref}) = $(Expr(:tuple, namemap...))))
     end
     # Declare that this struct is JSON formatted
-    push!(body, :($RestClient.responseformat(::Type{$structref}) = JSONFormat()))
+    push!(body, :($RestClient.dataformat(::Type{$structref}) = JSONFormat()))
     # Return the generated code
     Expr(:block, body...)
 end
