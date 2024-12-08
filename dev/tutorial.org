@@ -30,7 +30,7 @@ pkg> activate DeckAPI
 
 (DeckAPI) pkg> add RestClient JSON3
     Updating `/tmp/DeckAPI/Project.toml`
-  [d1389577] + RestClient v0.1.0
+  [e1389577] + RestClient v0.1.0
   [0f8b85d8] + JSON3 v1.14.1
     Updating `/tmp/DeckAPI/Manifest.toml`
   [...] ...
@@ -167,11 +167,11 @@ At this point we can call the endpoint, and create a function for someone using
 DeckAPI to call.
 
 #+begin_src julia
-new(count::Int; shuffled::Bool = false) =
+new(count::Int = 1; shuffled::Bool = false) =
     perform(Request{:get}(DECK_CONFIG, NewDeckEndpoint(count, shuffled)))
 #+end_src
 
-Later we'll show how all of these steps can be performed by a single [[@ref][~@endpoint~]]
+Next we'll show how these steps can be performed by a single [[@ref][~@endpoint~]]
 statement.
 
 ** Shuffle endpoint
