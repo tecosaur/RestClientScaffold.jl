@@ -3,6 +3,7 @@
 * Macros
 
 #+begin_src @docs
+@globalconfig
 @endpoint
 @jsondef
 #+end_src
@@ -29,32 +30,33 @@ List
 * Request interface
 
 #+begin_src @docs
-RestClientScaffold.pagename
-RestClientScaffold.headers
-RestClientScaffold.parameters
-RestClientScaffold.payload
+RestClient.globalconfig
+RestClient.pagename
+RestClient.headers
+RestClient.parameters
+RestClient.payload
 #+end_src
 
 * Response interface
 
 #+begin_src @docs
-RestClientScaffold.validate
-RestClientScaffold.responsetype
-RestClientScaffold.postprocess
-RestClientScaffold.contents
-RestClientScaffold.metadata
-RestClientScaffold.nextpage
-RestClientScaffold.thispagenumber
-RestClientScaffold.remainingpages
+RestClient.validate
+RestClient.responsetype
+RestClient.postprocess
+RestClient.contents
+RestClient.metadata
+RestClient.nextpage
+RestClient.thispagenumber
+RestClient.remainingpages
 #+end_src
 
 * Content formatting
 
 #+begin_src @docs
-RestClientScaffold.AbstractFormat
-RestClientScaffold.RawFormat
-RestClientScaffold.JSONFormat
-RestClientScaffold.dataformat
-RestClientScaffold.interpretresponse
-RestClientScaffold.writepayload
+RestClient.AbstractFormat
+RestClient.RawFormat
+RestClient.JSONFormat
+RestClient.dataformat
+RestClient.interpretresponse
+RestClient.writepayload
 #+end_src

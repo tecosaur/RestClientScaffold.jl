@@ -22,15 +22,15 @@ pkg> generate DeckAPI
     DeckAPI/src/DeckAPI.jl
 #+end_example
 
-Then, we activate the project and add =JSON3= and =RestClientScaffold= as
+Then, we activate the project and add =JSON3= and =RestClient= as
 dependencies.
 
 #+begin_example
 pkg> activate DeckAPI
 
-(DeckAPI) pkg> add RestClientScaffold JSON3
+(DeckAPI) pkg> add RestClient JSON3
     Updating `/tmp/DeckAPI/Project.toml`
-  [d1389577] + RestClientScaffold v0.1.0
+  [d1389577] + RestClient v0.1.0
   [0f8b85d8] + JSON3 v1.14.1
     Updating `/tmp/DeckAPI/Manifest.toml`
   [...] ...
@@ -40,7 +40,7 @@ Then we can navigate to =DeckAPI/src/DeckAPI.jl=, get rid of the default
 ~greet() = print("Hello World!")~, and add
 
 #+begin_src julia
-using RestClientScaffold, JSON3
+using RestClient, JSON3
 #+end_src
 
 Now we're ready to get started implementing the API! To start with, we'll want
@@ -109,7 +109,7 @@ holding ~cards~.
 
 * Adding endpoints
 
-In =RestClientScaffold=, each endpoint is represented with a dedicated subtype of
+In =RestClient=, each endpoint is represented with a dedicated subtype of
 [[@ref][~AbstractEndpoint~]]. Endpoints that provide a single value should subtype
 [[@ref][~SingleEndpoint~]], while endpoints that provide multiple values should subtype [[@ref][~ListEndpoint~]].
 
@@ -155,7 +155,7 @@ Cards can also be returned to the deck.
     cards::Union{Nothing, Vector{Card}}
 end
 
-function RestClientScaffold.parameters(ret::CardReturnEndpoint)
+function RestClient.parameters(ret::CardReturnEndpoint)
     if isnothing(ret.cards)
         Pair{String, String}[]
     else
@@ -193,7 +193,7 @@ putback(cardlist::List{Cards}) = putback(cardlist.request.endpoint.deck, cardlis
 
 * Demonstration
 
-By starting Julia with the environment variable =JULIA_DEBUG=RestClientScaffold=
+By starting Julia with the environment variable =JULIA_DEBUG=RestClient=
 set, we will see information on the requests sent and responses received. This
 helps us verify that everything is behaving as expected, and debug any
 failures or unexpected results.
@@ -201,17 +201,17 @@ failures or unexpected results.
 #+begin_src julia-repl
 julia> deck = DeckAPI.new()
 ┌ Debug:  GET  https://deckofcardsapi.com/api/deck/new?deck_count=1
-└ @ RestClientScaffold
+└ @ RestClient
 ┌ Debug:  200  80 bytes (saved to /tmp/api-get.dump) from https://deckofcardsapi.com/api/deck/new?deck_count=1
-└ @ RestClientScaffold
+└ @ RestClient
 DeckAPI.Deck(id="01n3ezer3rly", remaining=52)
 
 julia> cards = DeckAPI.draw(deck, 5)
 ┌ Debug:  GET  https://deckofcardsapi.com/api/deck/01n3ezer3rly/draw?count=5
-└ @ RestClientScaffold
+└ @ RestClient
 ┌ Debug:  200  1.181 KiB (saved to /tmp/api-get.dump) from https://deckofcardsapi.com/api/deck/01n3ezer3rly/draw?count=5
-└ @ RestClientScaffold
-RestClientScaffold.List{DeckAPI.Card} holding 5 items:
+└ @ RestClient
+RestClient.List{DeckAPI.Card} holding 5 items:
   • Card(code="AS", value="ACE", suit="SPADES")
   • Card(code="2S", value="2", suit="SPADES")
   • Card(code="3S", value="3", suit="SPADES")
@@ -220,24 +220,24 @@ RestClientScaffold.List{DeckAPI.Card} holding 5 items:
 
 julia> DeckAPI.putback(cards)
 ┌ Debug:  GET  https://deckofcardsapi.com/api/deck/01n3ezer3rly/return?cards=AS%2C2S%2C3S%2C4S%2C5S
-└ @ RestClientScaffold
+└ @ RestClient
 ┌ Debug:  200  61 bytes (saved to /tmp/api-get.dump) from https://deckofcardsapi.com/api/deck/01n3ezer3rly/return?cards=AS%2C2S%2C3S%2C4S%2C5S
-└ @ RestClientScaffold
+└ @ RestClient
 DeckAPI.Deck(id="01n3ezer3rly", remaining=52)
 
 julia> DeckAPI.shuffle(deck)
 ┌ Debug:  GET  https://deckofcardsapi.com/api/deck/01n3ezer3rly/shuffle?remaining=false
-└ @ RestClientScaffold
+└ @ RestClient
 ┌ Debug:  200  79 bytes (saved to /tmp/api-get.dump) from https://deckofcardsapi.com/api/deck/01n3ezer3rly/shuffle?remaining=false
-└ @ RestClientScaffold
+└ @ RestClient
 DeckAPI.Deck(id="01n3ezer3rly", remaining=52)
 
 julia> cards = DeckAPI.draw(deck, 5)
 ┌ Debug:  GET  https://deckofcardsapi.com/api/deck/01n3ezer3rly/draw?count=5
-└ @ RestClientScaffold
+└ @ RestClient
 ┌ Debug:  200  1.183 KiB (saved to /tmp/api-get.dump) from https://deckofcardsapi.com/api/deck/01n3ezer3rly/draw?count=5
-└ @ RestClientScaffold
-RestClientScaffold.List{DeckAPI.Card} holding 5 items:
+└ @ RestClient
+RestClient.List{DeckAPI.Card} holding 5 items:
   • Card(code="3C", value="3", suit="CLUBS")
   • Card(code="QC", value="QUEEN", suit="CLUBS")
   • Card(code="4S", value="4", suit="SPADES")
