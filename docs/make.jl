@@ -21,6 +21,7 @@ makedocs(;
         "Tutorial" => "tutorial.md",
         "API" => "api.md",
     ],
+    format=Documenter.HTML(assets=["assets/favicon.ico"]),
     sitename="RestClient.jl",
     authors = "tecosaur and contributors: https://github.com/tecosaur/RestClient.jl/graphs/contributors",
     warnonly = [:missing_docs],
