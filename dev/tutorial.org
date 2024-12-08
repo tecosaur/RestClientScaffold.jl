@@ -12,8 +12,8 @@ Looking at the API documentation, we can see that
 + Decks can be created at the =deck/new= API (optionally shuffled)
 + Operations on a deck occur at =deck/<id>/operation= endpoints
 
-That's it! To get started we'll create an blank package and call it "DeckAPI" (I
-did this in my temp directory).
+That's it! To get started we'll create an blank package and call it "DeckAPI"
+(I did this in my temp directory).
 
 #+begin_example
 pkg> generate DeckAPI
@@ -44,7 +44,7 @@ using RestClient, JSON3
 #+end_src
 
 Now we're ready to get started implementing the API! To start with, we'll want
-to create a ~RequestConfig~ to hold the context in which we're calling the API.
+to create a [[@ref][~RequestConfig~]] to hold the context in which we're calling the API.
 This just holds the base URL, a request lock, API access key (optional), and
 timeout value (optional). The /Deck of Cards/ API is simple enough that we can set
 a single global ~RequestConfig~, but in a more complex case we might define a
@@ -62,7 +62,7 @@ RestClient.globalconfig(::Val{DeckAPI}) = DECK_CONFIG
 #+end_src
 
 If we didn't care about creating the ~DECK_CONFIG~ variable, this could be
-simplified to just ~@globalconfig RequestConfig(...)~.
+simplified to just [[@ref @globalconfig][~@globalconfig RequestConfig(...)~]].
 
 That's all the setup needed, next we'll define types for the JSON structures
 that /Desk of Cards/ can return.
@@ -149,14 +149,14 @@ RestClient.pagename(new::NewDeckEndpoint) = "deck/new" * ifelse(new.shuffle, "/s
 #+end_src
 
 The deck count is specified using the =deck_count= parameter, and so we should add
-a ~parameters~ method too.
+a [[@ref][~parameters~]] method too.
 
 #+begin_src julia
 RestClient.parameters(new::NewDeckEndpoint) = ["deck_count" => string(new.count)]
 #+end_src
 
 After performing this request, we expect a JSON representation of a ~Deck~ to be
-returned. Since we used ~@jsondef~ to create the type, JSON3 will know how to
+returned. Since we used [[@ref][~@jsondef~]] to create the type, JSON3 will know how to
 parse it and we need only declare that we expect a ~Deck~ response.
 
 #+begin_src julia
@@ -212,9 +212,9 @@ macro, so long as the appropriate [[@ref][~globalconfig~]] method is defined.
 #+end_src
 
 A ~DrawEndpoint~ struct will automatically be created, and since ~CardsResponse~ is
-~ListResponse~, the ~DrawEndpoint~ struct will subtype ~ListEndpoint~. Due to this
+[[@ref][~ListResponse~]], the ~DrawEndpoint~ struct will subtype [[@ref][~ListEndpoint~]]. Due to this
 subtyping, the ~CardsResponse~ will automatically be restructured into a
-~List{Card}~ by the generic list ~postprocess~ method.
+~List{Card}~ by the generic list [[@ref][~postprocess~]] method.
 
 ** Card return endpoint
 
@@ -224,7 +224,7 @@ optionally specify whether specific cards should be returned instead of
 everything.
 
 We will account for this by leaving the endpoint parameters out of our
-[[@ref][~@endpoint~]] construction, and then separately defining a ~parameters~ method.
+[[@ref][~@endpoint~]] construction, and then separately defining a [[@ref][~parameters~]] method.
 
 #+begin_src julia
 @endpoint putback(deck::Deck, cards::Union{Nothing, Vector{Card}}) ->
@@ -239,7 +239,7 @@ function RestClient.parameters(pb::PutbackEndpoint)
 end
 #+end_src
 
-Since we can end up with a ~List{Card}~ from the draw endpoint, and a ~List~
+Since we can end up with a ~List{Card}~ from the draw endpoint, and a [[@ref][~List~]]
 contains the original request information (including the deck field of the draw
 endpoint), we can also provide a ~putback~ method that operates on a ~List{Card}~
 for convenience.
