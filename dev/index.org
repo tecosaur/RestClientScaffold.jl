@@ -5,7 +5,7 @@ involved in making well-formed requests, handling serialisation and
 deserialisation, request limiting, and result pagination.
 
 =RestClient= aims to take care of as much of this boilerplate as possible without
-compromising on flexibility. See [[https:./tutorial][the tutorial]] for a sense of what this looks
+compromising on flexibility. See [[file:tutorial.md][the tutorial]] for a sense of what this looks
 like in practice.
 
 * Getting started
