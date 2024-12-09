@@ -9,7 +9,7 @@ compromising on flexibility. See [[file:tutorial.md][the tutorial]] for a sense 
 like in practice.
 
 * Getting started
-** Define an API configuration
+** Set the API configuration
 
 #+begin_src julia
 @globalconfig RequestConfig("https://api.example.com")
